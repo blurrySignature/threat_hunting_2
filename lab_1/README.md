@@ -270,9 +270,9 @@ file.info("mytest.R")
 ```
 
              size isdir mode               mtime               ctime
-    mytest.R    0 FALSE  666 2023-09-15 00:06:45 2023-09-15 00:06:45
+    mytest.R    0 FALSE  666 2023-09-15 00:14:29 2023-09-15 00:14:29
                            atime exe
-    mytest.R 2023-09-15 00:06:45  no
+    mytest.R 2023-09-15 00:14:29  no
 
 Change the name of the file “mytest.R” to “mytest2.R” by using
 file.rename().
@@ -586,7 +586,7 @@ paste(LETTERS, 1:4, sep = "-")
 
 ## Оценка результатов
 
-Пройдено 4 урока из интерактивного курса по основам языка R, а именно
+Пройдено 4 урока из интерактивного курса по основам языка R.
 
 ## Вывод
 
