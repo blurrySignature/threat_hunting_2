@@ -1,0 +1,142 @@
+---
+title: "Лабораторная работа № 6"
+format: 
+  md:
+    output-file: README.md
+author: "Нестеров Павел"
+---
+
+# Исследование вредоносной активности в домене Windows
+
+## Цель работы
+
+1.  Закрепить навыки исследования данных журнала Windows Active Directory
+2.  Изучить структуру журнала системы Windows Active Directory
+3.  Закрепить практические навыки использования языка программирования R для обработки данных
+4.  Закрепить знания основных функций обработки данных экосистемы `tidyverse` языка R
+
+## Исходные данные
+
+1.  ОС Windows 11
+2.  RStudio Desktop
+3.  Интерпретатор R 4.2.2
+4.  dplyr 1.1.3
+
+**Общая ситуация**
+
+На протяжении долгого времени системные администраторы Доброй Организации замечали подозрительную активность в домене Windows, но конкретных доказательств компрометации сети найти не удавалось. К Вам в руки попал файл с выгрузкой данных из системы SIEM. Помогите выявить факты компрометации.
+
+## Задание
+
+Используя программный пакет `dplyr` языка программирования R, провести анализ журналов и ответить на вопросы
+
+## Ход работы
+
+### Шаг 1. Подготовка данных
+
+Для начала установим пакет `dplyr`
+
+```{r}
+library(dplyr)
+library(jsonlite)
+library(tidyr)
+library(xml2)
+library(rvest)
+```
+
+##### 1. Импортируйте данные
+
+```{r}
+data = stream_in(file('caldera_attack_evals_round1_day1_2019-10-20201108.json'))
+data %>% 
+  head
+```
+
+##### 2. Приведите датасеты в вид "аккуратных данных", преобразовать типы столбцов в соответствии с типом данных
+
+```{r warning=FALSE}
+data <- data %>%
+  mutate(`@timestamp` = as.POSIXct(`@timestamp`, format = "%Y-%m-%dT%H:%M:%OSZ", tz = "UTC")) %>%
+  rename(timestamp = `@timestamp`, metadata = `@metadata`)
+```
+
+##### 3. Просмотрите общую структуру данных с помощью функции glimpse()
+
+```{r}
+data %>% glimpse
+```
+
+### Шаг 2. Анализ данных
+
+##### Задание 1. Раскройте датафрейм избавившись от вложенных датафреймов.
+
+> Для обнаружения таких можно использовать функцию dplyr::glimpse() , а для раскрытия вложенности -- tidyr::unnest() . Обратите внимание, что при раскрытии теряются внешние названия колонок -- это можно предотвратить если использовать параметр tidyr::unnest(..., names_sep =)
+
+```{r}
+data_unnested <- data %>%
+  unnest(c(metadata, event, log, winlog, ecs, host, agent), names_sep = ".")
+
+data_unnested %>% glimpse
+```
+
+##### Задание 2. Минимизируйте количество колонок в датафрейме -- уберите колоки с единственным значением параметра
+
+```{r}
+data_clear <- data_unnested %>%
+  select(-metadata.beat, -metadata.type, -metadata.version, -metadata.topic, 
+         -event.kind, -winlog.api, -agent.ephemeral_id, -agent.hostname, 
+         -agent.id, -agent.version, -agent.type)
+
+data_clear %>% glimpse
+```
+
+##### Задание 3. Какое количество хостов представлено в данном датасете?
+
+```{r}
+data_clear %>%
+  select(host.name) %>%
+  unique
+```
+
+##### Задание 4. Подготовьте датафрейм с расшифровкой Windows Event_ID, приведите типы данных к типу их значений
+
+```{r}
+webpage_url <- "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/appendix-l--events-to-monitor"
+webpage <- xml2::read_html(webpage_url)
+event_df <- rvest::html_table(webpage)[[1]]
+
+event_df %>% glimpse
+```
+
+Подготовим данные:
+
+```{r warning=FALSE}
+event_df <- event_df %>%
+  mutate_at(vars(`Current Windows Event ID`, `Legacy Windows Event ID`), as.integer) %>%
+  rename(c(Current_Windows_Event_ID = `Current Windows Event ID`, 
+           Legacy_Windows_Event_ID = `Legacy Windows Event ID`, 
+           Potential_Criticality = `Potential Criticality`, 
+           Event_Summary = `Event Summary`))
+
+event_df %>% glimpse
+```
+
+##### Задание 5. Есть ли в логе события с высоким и средним уровнем значимости? Сколько их?
+
+```{r}
+event_df %>% 
+  group_by(Potential_Criticality) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count))
+```
+
+Количество событий со средним уровнем значимости: 79 
+Количество событий с высоким уровнем значимости: 9
+
+## Оценка результатов
+
+В ходе практической работы были получены навыки исследования данных журнала Windows Active Directory
+
+## Вывод
+
+Были закреплены навыки использования языка программирования R для обработки данных
