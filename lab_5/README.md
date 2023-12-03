@@ -73,7 +73,7 @@ library(lubridate)
 
 Импортируем данные из общего файла файла в 2 разных датасета
 
-1.  Датасет 1 – анонсы беспроводных точек доступа (`data_1`)
+Датасет 1 – анонсы беспроводных точек доступа (`data_1`)
 
 ``` r
 data_1 = read.csv("mir.csv-01.csv", nrows = 167)
@@ -101,9 +101,7 @@ data_1 %>% glimpse()
 ``` r
 data_1 <- data_1 %>% 
   mutate_at(vars(BSSID, Privacy, Cipher, Authentication, LAN.IP, ESSID), trimws) %>%
-  mutate_at(vars(BSSID, Privacy, Cipher, Authentication, LAN.IP, ESSID), na_if, "")
-
-data_1 <- data_1 %>% 
+  mutate_at(vars(BSSID, Privacy, Cipher, Authentication, LAN.IP, ESSID), na_if, "") %>% 
   mutate_at(vars(First.time.seen, Last.time.seen), as.POSIXct, format = "%Y-%m-%d %H:%M:%S")
 
 data_1 %>% head
@@ -131,8 +129,8 @@ data_1 %>% head
     5        25           <NA>  NA
     6        13  MIREA_HOTSPOT  NA
 
-1.  Датасет 2 – запросы на подключение клиентов к известным им точкам
-    доступа (data_2)
+Датасет 2 – запросы на подключение клиентов к известным им точкам
+доступа (data_2)
 
 ``` r
 data_2 = read.csv("mir.csv-01.csv", skip = 170)
